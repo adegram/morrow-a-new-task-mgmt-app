@@ -1,0 +1,97 @@
+@page
+@model IndexModel
+@{
+    var today = DateTime.Today;
+    var greeting = DateTime.Now.Hour < 12 ? "Good morning" : DateTime.Now.Hour < 18 ? "Good afternoon" : "Good evening";
+}
+<div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+        <a class="brand" asp-page="/Index" aria-label="Morrow home">
+            <span class="brand-mark"><svg viewBox="0 0 28 28" fill="none" aria-hidden="true"><path d="M6 14.5 11.2 20 22 8" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="14" cy="14" r="12" stroke="currentColor" stroke-width="2"/></svg></span>
+            <span>morrow</span>
+        </a>
+        <div class="workspace-label">WORKSPACE</div>
+        <nav class="main-nav" aria-label="Main navigation">
+            <a class="nav-link @(Model.ViewName == "today" ? "active" : "")" asp-page="/Index" asp-route-view="today"><span class="nav-icon">◷</span><span>Today</span><span class="nav-count">@Model.DueTodayCount</span></a>
+            <a class="nav-link @(Model.ViewName == "upcoming" ? "active" : "")" asp-page="/Index" asp-route-view="upcoming"><span class="nav-icon">▦</span><span>Upcoming</span></a>
+            <a class="nav-link @(Model.ViewName == "all" ? "active" : "")" asp-page="/Index" asp-route-view="all"><span class="nav-icon">☷</span><span>All tasks</span><span class="nav-count">@Model.OpenCount</span></a>
+            <a class="nav-link @(Model.ViewName == "completed" ? "active" : "")" asp-page="/Index" asp-route-view="completed"><span class="nav-icon">✓</span><span>Completed</span></a>
+        </nav>
+        <div class="sidebar-bottom">
+            <div class="sidebar-tip"><span class="tip-star">✦</span><strong>A little progress<br />adds up.</strong><span>Keep showing up for your goals, one task at a time.</span><div class="tip-sparkles">✳ &nbsp; · &nbsp; ✧</div></div>
+            <div class="profile"><div class="avatar">M</div><div class="profile-copy"><strong>Your workspace</strong><span>Personal plan</span></div><form method="post" asp-page="/Logout"><button class="logout-button" type="submit">Log out</button></form></div>
+        </div>
+    </aside>
+
+    <main class="main-area">
+        <header class="topbar">
+            <button class="mobile-menu" type="button" aria-label="Toggle menu" onclick="document.getElementById('sidebar').classList.toggle('sidebar-open')">☰</button>
+            <div class="breadcrumb"><span>Workspace</span><b>/</b><strong>@Model.DisplayName</strong></div>
+            <div class="topbar-actions"><div class="date-chip"><span class="date-dot"></span>@today.ToString("dddd, MMM d")</div><button class="icon-button" type="button" aria-label="Search tasks" onclick="document.getElementById('task-search').focus()"><svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.4 4.4"/></svg></button><button class="avatar avatar-small" aria-label="Morrow account">M</button></div>
+        </header>
+
+        <div class="content-wrap">
+            <section class="welcome-row">
+                <div><div class="eyebrow">@today.ToString("dddd, MMMM d, yyyy")</div><h1>@greeting, let’s make today <span>count<span class="title-period">.</span></span></h1><p class="welcome-sub">You have <strong>@Model.OpenCount @(Model.OpenCount == 1 ? "task" : "tasks")</strong> on your list. Small steps, big momentum.</p></div>
+                <button class="primary-button" type="button" onclick="openTaskDialog('create')"><span class="plus">＋</span> New task</button>
+            </section>
+
+            @if (!string.IsNullOrEmpty(Model.Notice)) { <div class="toast" role="status">@Model.Notice <button type="button" onclick="this.parentElement.remove()" aria-label="Dismiss">×</button></div> }
+
+            <section class="stats-grid" aria-label="Task overview">
+                <article class="stat-card stat-open"><div class="stat-top"><span class="stat-label">Open tasks</span><span class="stat-icon violet">☷</span></div><div class="stat-number">@Model.OpenCount</div><div class="stat-foot"><span class="foot-dot violet-dot"></span>Ready when you are</div><div class="stat-decoration decoration-violet">↗</div></article>
+                <article class="stat-card stat-today"><div class="stat-top"><span class="stat-label">Due today</span><span class="stat-icon peach">◷</span></div><div class="stat-number">@Model.DueTodayCount</div><div class="stat-foot"><span class="foot-dot peach-dot"></span>@(Model.DueTodayCount == 0 ? "A little breathing room" : "On today’s agenda")</div><div class="stat-decoration decoration-peach">✳</div></article>
+                <article class="stat-card stat-done"><div class="stat-top"><span class="stat-label">Completed</span><span class="stat-icon green">✓</span></div><div class="stat-number">@Model.CompletedCount</div><div class="stat-foot"><span class="foot-dot green-dot"></span>@Model.CompletionPercent% of all your tasks</div><div class="stat-decoration decoration-green">✦</div></article>
+            </section>
+
+            <section class="dashboard-grid">
+                <div class="task-panel panel">
+                    <div class="panel-heading"><div><div class="panel-title-row"><h2>@Model.DisplayName</h2><span class="count-pill">@Model.Tasks.Count</span></div><p>@(Model.ViewName == "today" ? "A clear plan makes a calmer day." : Model.ViewName == "upcoming" ? "See what’s coming up next." : Model.ViewName == "completed" ? "Look at everything you’ve accomplished." : "Everything you’re keeping track of.")</p></div>
+                        <div class="list-tools"><label class="search-box"><svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.4 4.4"/></svg><input id="task-search" type="search" placeholder="Search tasks" oninput="filterTasks(this.value)" /></label><select class="sort-select" aria-label="Sort tasks" onchange="sortTasks(this.value)"><option value="default">Sort: date</option><option value="priority">Priority</option><option value="alphabetical">A to Z</option></select></div>
+                    </div>
+                    @if (Model.Tasks.Count == 0)
+                    {
+                        <div class="empty-state"><div class="empty-illustration"><span>✓</span><i>✦</i><b>✳</b></div><h3>@(Model.ViewName == "completed" ? "Nothing completed yet" : "Your list is clear")</h3><p>@(Model.ViewName == "completed" ? "Tasks you finish will show up here." : "Add a task and give your day a little direction.")</p><button class="text-button" type="button" onclick="openTaskDialog('create')">＋ Add your first task</button></div>
+                    }
+                    else
+                    {
+                        <div class="task-list" id="task-list">
+                            @foreach (var task in Model.Tasks)
+                            {
+                                var overdue = !task.IsCompleted && task.DueDate?.Date < today;
+                                <article class="task-row @(task.IsCompleted ? "is-complete" : "")" data-title="@task.Title.ToLowerInvariant()" data-priority="@task.Priority.ToLowerInvariant()" data-date="@(task.DueDate?.ToString("yyyy-MM-dd") ?? "9999-99-99")">
+                                    <form method="post" asp-page-handler="Toggle" class="check-form"><input type="hidden" name="id" value="@task.Id"/><input type="hidden" name="view" value="@Model.ViewName"/><button class="task-check @(task.IsCompleted ? "checked" : "")" type="submit" aria-label="@(task.IsCompleted ? "Mark incomplete" : "Mark complete")">@(task.IsCompleted ? "✓" : "")</button></form>
+                                    <div class="task-main"><div class="task-title">@task.Title</div>@if (!string.IsNullOrWhiteSpace(task.Notes)) { <div class="task-notes">@task.Notes</div> }<div class="task-meta"><span class="category-tag category-@task.Category.ToLowerInvariant()"><i></i>@task.Category</span><span class="priority-tag priority-@task.Priority.ToLowerInvariant()"><span></span>@task.Priority</span></div></div>
+                                    <div class="task-end"><span class="task-date @(overdue ? "overdue" : "")">@(task.DueDate is null ? "No date" : task.DueDate.Value.Date == today ? "Today" : overdue ? $"Overdue · {task.DueDate.Value.ToString("MMM d")}" : task.DueDate.Value.ToString("MMM d"))</span><button class="row-menu" type="button" aria-label="Edit @task.Title" onclick="openEdit(this)" data-id="@task.Id" data-title="@task.Title" data-notes="@task.Notes" data-category="@task.Category" data-priority="@task.Priority" data-date="@task.DueDate?.ToString("yyyy-MM-dd")">···</button></div>
+                                </article>
+                            }
+                        </div>
+                        <button type="button" class="add-inline" onclick="openTaskDialog('create')"><span>＋</span> Add a task</button>
+                    }
+                </div>
+
+                <aside class="right-column">
+                    <section class="progress-card panel"><div class="right-panel-heading"><div><span class="mini-eyebrow">YOUR MOMENTUM</span><h2>Task progress</h2></div><span class="progress-icon">✦</span></div><div class="progress-ring-wrap"><div class="progress-ring" style="--progress:@Model.CompletionPercent"><div class="ring-inner"><strong>@Model.CompletionPercent<span>%</span></strong><small>complete</small></div></div></div><div class="progress-caption"><strong>@(Model.CompletionPercent >= 75 ? "You’re on a roll!" : Model.CompletionPercent > 0 ? "Every step counts." : "Your next win awaits.")</strong><span>@Model.CompletedCount of @Model.AllTasks.Count tasks completed</span></div><div class="progress-track"><span style="width:@(Model.CompletionPercent)%"></span></div></section>
+                    <section class="upcoming-card panel"><div class="right-panel-heading"><div><span class="mini-eyebrow">ON YOUR RADAR</span><h2>Coming up</h2></div><a class="view-all" asp-page="/Index" asp-route-view="upcoming">View all <span>↗</span></a></div>
+                        @if (Model.UpcomingTasks.Count == 0) { <div class="upcoming-empty"><span>☀</span><p>No upcoming deadlines.<br />Enjoy the breathing room!</p></div> }
+                        else { <div class="upcoming-list">@foreach (var task in Model.UpcomingTasks) { <div class="upcoming-item"><div class="calendar-tile"><span>@task.DueDate!.Value.ToString("MMM").ToUpperInvariant()</span><strong>@task.DueDate.Value.Day</strong></div><div class="upcoming-copy"><strong>@task.Title</strong><span>@task.Category · @task.Priority priority</span></div></div> }</div> }
+                    </section>
+                    <div class="quote-card"><span class="quote-mark">“</span><p>The secret of getting ahead is getting started.</p><span class="quote-author">— Mark Twain</span><span class="quote-sun">✳</span></div>
+                </aside>
+            </section>
+            <footer class="page-footer"><span>Made for your everyday wins <span class="footer-heart">♥</span></span><span>One thing at a time.</span></footer>
+        </div>
+    </main>
+</div>
+
+<dialog class="task-dialog" id="task-dialog">
+    <form method="post" id="task-form" asp-page-handler="Create" class="dialog-form">
+        <div class="dialog-header"><div><span class="mini-eyebrow">MAKE IT HAPPEN</span><h2 id="dialog-title">Create a task</h2></div><button class="dialog-close" type="button" onclick="closeTaskDialog()" aria-label="Close">×</button></div>
+        <input type="hidden" name="view" value="@Model.ViewName" />
+        <label class="field-label" for="field-title">Task name</label><input class="field-control title-field" id="field-title" name="title" maxlength="180" required placeholder="e.g. Prepare project proposal" />
+        <label class="field-label" for="field-notes">Notes <span>Optional</span></label><textarea class="field-control" id="field-notes" name="notes" rows="3" placeholder="Add a little more detail…"></textarea>
+        <div class="field-grid"><div><label class="field-label" for="field-category">List</label><select class="field-control" id="field-category" name="category"><option>Personal</option><option>Work</option><option>Learning</option><option>Health</option></select></div><div><label class="field-label" for="field-priority">Priority</label><select class="field-control" id="field-priority" name="priority"><option>Low</option><option selected>Medium</option><option>High</option></select></div></div>
+        <label class="field-label" for="field-date">Due date <span>Optional</span></label><input class="field-control date-field" id="field-date" name="dueDate" type="date" />
+        <div class="dialog-actions"><button class="delete-button" id="dialog-delete" type="button" onclick="deleteCurrentTask()" hidden>Delete task</button><button class="secondary-button" type="button" onclick="closeTaskDialog()">Cancel</button><button class="primary-button" type="submit" id="dialog-submit">Add task <span>↗</span></button></div>
+    </form>
+</dialog>

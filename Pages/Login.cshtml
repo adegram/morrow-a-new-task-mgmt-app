@@ -1,0 +1,21 @@
+@page
+@model LoginModel
+@{
+    ViewData["Title"] = "Sign in";
+}
+<main class="login-page">
+    <section class="login-card">
+        <a class="brand login-brand" asp-page="/Login" aria-label="Morrow"><span class="brand-mark"><svg viewBox="0 0 28 28" fill="none" aria-hidden="true"><path d="M6 14.5 11.2 20 22 8" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="14" cy="14" r="12" stroke="currentColor" stroke-width="2"/></svg></span><span>morrow</span></a>
+        <div class="login-kicker">A LITTLE MORE INTENTION</div>
+        <h1>Welcome back.</h1>
+        <p>Sign in to pick up where you left off.</p>
+        <form method="post" class="login-form">
+            <input type="hidden" asp-for="ReturnUrl" />
+            <label for="password">Workspace password</label>
+            <input id="password" asp-for="Password" type="password" autocomplete="current-password" required autofocus placeholder="Enter your password" />
+            @if (!string.IsNullOrEmpty(Model.ErrorMessage)) { <div class="login-error" role="alert">@Model.ErrorMessage</div> }
+            <button class="primary-button" type="submit">Continue <span>↗</span></button>
+        </form>
+        <div class="login-foot">Your tasks stay yours. <span>♥</span></div>
+    </section>
+</main>
