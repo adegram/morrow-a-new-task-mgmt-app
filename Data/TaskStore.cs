@@ -21,7 +21,7 @@ public sealed class TaskStore
 
     private static NpgsqlConnection Connect(string connectionString) => new(connectionString);
 
-    private static string BuildConnectionString(string value)
+    internal static string BuildConnectionString(string value)
     {
         if (!Uri.TryCreate(value, UriKind.Absolute, out var uri) ||
             (uri.Scheme != "postgres" && uri.Scheme != "postgresql"))
@@ -69,6 +69,10 @@ public sealed class TaskStore
             );
             CREATE INDEX IF NOT EXISTS ix_tasks_due_date ON tasks(due_date);
             CREATE INDEX IF NOT EXISTS ix_tasks_is_completed ON tasks(is_completed);
+            CREATE TABLE IF NOT EXISTS data_protection_keys (
+                id UUID PRIMARY KEY,
+                xml TEXT NOT NULL
+            );
             """;
         await command.ExecuteNonQueryAsync();
     }
@@ -108,7 +112,7 @@ public sealed class TaskStore
         command.Parameters.Add(new NpgsqlParameter("notes", NpgsqlDbType.Text) { Value = (object?)notes?.Trim() ?? DBNull.Value });
         command.Parameters.AddWithValue("category", NormalizeCategory(category));
         command.Parameters.AddWithValue("priority", NormalizePriority(priority));
-        command.Parameters.Add(new NpgsqlParameter { NpgsqlDbType = NpgsqlDbType.Date, Value = dueDate is null ? DBNull.Value : DateOnly.FromDateTime(dueDate.Value) });
+        command.Parameters.Add(new NpgsqlParameter("dueDate", NpgsqlDbType.Date) { Value = dueDate is null ? DBNull.Value : DateOnly.FromDateTime(dueDate.Value) });
         await command.ExecuteNonQueryAsync();
     }
 
@@ -122,7 +126,7 @@ public sealed class TaskStore
         command.Parameters.Add(new NpgsqlParameter("notes", NpgsqlDbType.Text) { Value = (object?)notes?.Trim() ?? DBNull.Value });
         command.Parameters.AddWithValue("category", NormalizeCategory(category));
         command.Parameters.AddWithValue("priority", NormalizePriority(priority));
-        command.Parameters.Add(new NpgsqlParameter { NpgsqlDbType = NpgsqlDbType.Date, Value = dueDate is null ? DBNull.Value : DateOnly.FromDateTime(dueDate.Value) });
+        command.Parameters.Add(new NpgsqlParameter("dueDate", NpgsqlDbType.Date) { Value = dueDate is null ? DBNull.Value : DateOnly.FromDateTime(dueDate.Value) });
         command.Parameters.AddWithValue("id", id);
         await command.ExecuteNonQueryAsync();
     }
