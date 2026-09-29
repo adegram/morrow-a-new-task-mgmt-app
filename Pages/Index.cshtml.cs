@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Taskflow.Data;
@@ -6,7 +5,6 @@ using Taskflow.Models;
 
 namespace Taskflow.Pages;
 
-[Authorize]
 public sealed class IndexModel(TaskStore store) : PageModel
 {
     public List<TaskItem> Tasks { get; private set; } = [];

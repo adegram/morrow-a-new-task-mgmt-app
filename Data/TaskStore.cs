@@ -4,7 +4,6 @@ using Taskflow.Models;
 
 namespace Taskflow.Data;
 
-
 public sealed class TaskStore
 {
     private readonly string _connectionString;

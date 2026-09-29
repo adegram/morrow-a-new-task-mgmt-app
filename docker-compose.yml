@@ -7,7 +7,6 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       DATABASE_URL: Host=db;Port=5432;Database=taskflow;Username=taskflow;Password=local-dev-only
-      APP_PASSWORD: local-only-password-change-me
     depends_on:
       db:
         condition: service_healthy
